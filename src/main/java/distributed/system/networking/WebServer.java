@@ -1,24 +1,24 @@
 package distributed.system.networking;
 
+import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
-
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
 
 public class WebServer {
     private static final String STATUS_ENDPOINT = "/status";
 
     private final int port;
     private HttpServer server;
-    private final OnRequestCallback onRequestCallback;
+    private final OnRequestCallback requestCallback;
 
-    public WebServer(int port, OnRequestCallback onRequestCallback) {
+    public WebServer(int port, OnRequestCallback requestCallback) {
         this.port = port;
-        this.onRequestCallback = onRequestCallback;
+        this.requestCallback = requestCallback;
     }
 
     public void startServer() {
@@ -30,7 +30,7 @@ public class WebServer {
         }
 
         HttpContext statusContext = server.createContext(STATUS_ENDPOINT);
-        HttpContext taskContext = server.createContext(onRequestCallback.getEndpoint());
+        HttpContext taskContext = server.createContext(requestCallback.getEndpoint());
 
         statusContext.setHandler(this::handleStatusCheckRequest);
         taskContext.setHandler(this::handleTaskRequest);
@@ -45,7 +45,7 @@ public class WebServer {
             return;
         }
 
-        byte[] responseBytes = onRequestCallback.handleRequest(exchange.getRequestBody().readAllBytes());
+        byte[] responseBytes = requestCallback.handleRequest(exchange.getRequestBody().readAllBytes());
 
         sendResponse(responseBytes, exchange);
     }
@@ -66,5 +66,9 @@ public class WebServer {
         outputStream.write(responseBytes);
         outputStream.flush();
         outputStream.close();
+    }
+
+    public void stop() {
+        server.stop(10);
     }
 }

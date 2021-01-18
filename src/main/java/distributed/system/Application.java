@@ -22,10 +22,11 @@ public class Application implements Watcher{
     	int currentServerPort = args.length == 1 ? Integer.parseInt(args[0]) : DEFAULT_PORT; 
 		Application application = new Application();
 		ZooKeeper zookeeper = application.connectToZookeeper();
-    	
-		ServiceRegistry serviceRegistry = new ServiceRegistry(zookeeper);
 		
-		OnElectionAction onElectionAction = new OnElectionAction(serviceRegistry, currentServerPort);
+		ServiceRegistry workersServiceRegistry = new ServiceRegistry(zookeeper, ServiceRegistry.WORKERS_REGISTRY_ZNODE);
+		ServiceRegistry coordenatorsServiceRegistry = new ServiceRegistry(zookeeper, ServiceRegistry.COORDINATORS_REGISTRY_ZNODE);
+    			
+		OnElectionAction onElectionAction = new OnElectionAction(workersServiceRegistry, coordenatorsServiceRegistry, currentServerPort);
 		
     	LeaderElection leaderElection = new LeaderElection(zookeeper, onElectionAction);
     	leaderElection.volunteerForLeadership();
